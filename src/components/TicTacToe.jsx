@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import Board from "./Board";
 import Tile from "./Tile";
+import GameOver from "./GameOver";
+import GameState from "./GameState";
+import PlayAgain from "./PlayAgain";
 
 const player_x = "X";
 const player_o = "O";
@@ -20,7 +23,7 @@ const winningCombinations = [
   { combo: [2, 4, 6], strikeClass: "strike-diagonal-2" },
 ];
 
-function checkWinner(tiles, setStrikeClass) {
+function checkWinner(tiles, setStrikeClass, setGameState) {
   for (const wc of winningCombinations) {
     const { combo, strikeClass } = wc;
     const tileValue1 = tiles[combo[0]];
@@ -33,7 +36,17 @@ function checkWinner(tiles, setStrikeClass) {
       tileValue1 === tileValue3
     ) {
       setStrikeClass(strikeClass);
+      if (tileValue1 === player_x) {
+        setGameState(GameState.player_x_win);
+      } else {
+        setGameState(GameState.player_o_win);
+      }
+      return;
     }
+  }
+  const areAllTilesClicked = tiles.every((tile) => tile !== null);
+  if (areAllTilesClicked === true) {
+    setGameState(GameState.draw);
   }
 }
 
@@ -41,8 +54,12 @@ function TicTacToe() {
   const [tiles, setTiles] = useState(Array(9).fill(null));
   const [playerTurn, setPlayerTurn] = useState(player_x);
   const [strikeClass, setStrikeClass] = useState();
+  const [gameState, setGameState] = useState(GameState.inProgress);
 
   const handleTileClick = (index) => {
+    if (gameState !== GameState.inProgress) {
+      return;
+    }
     if (tiles[index] !== null) {
       return;
     }
@@ -55,8 +72,16 @@ function TicTacToe() {
       setPlayerTurn(player_x);
     }
   };
+
+  const handlePlayAgain = () => {
+    setGameState(GameState.inProgress);
+    setTiles(Array(9).fill(null));
+    setPlayerTurn(player_x);
+    setStrikeClass(null);
+  };
+
   useEffect(() => {
-    checkWinner(tiles, setStrikeClass);
+    checkWinner(tiles, setStrikeClass, setGameState);
   }, [tiles]);
 
   return (
@@ -68,6 +93,8 @@ function TicTacToe() {
         onTileClick={handleTileClick}
         strikeClass={strikeClass}
       />
+      <GameOver gameState={gameState} />
+      <PlayAgain gameState={gameState} onPlayAgain={handlePlayAgain} />
     </div>
   );
 }
